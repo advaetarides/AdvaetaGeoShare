@@ -1,6 +1,6 @@
-# advaetaGeoShare v1: Paste a Google Maps link, open it in OsmAnd
+# AdvaetaGeoShare v1: Paste a Google Maps link, open it in OsmAnd
 
-**App name:** advaetaGeoShare (Xcode project/bundle name, app display name).
+**App name:** AdvaetaGeoShare (Xcode project/bundle name, app display name).
 
 ## Context
 
