@@ -145,31 +145,11 @@ struct ContentView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    NavigationLink {
-                        RoutesListView(
-                            viewModel: RoutesListViewModel(routeStore: routeStore, launcher: launcher, filter: .points),
-                            title: "My Places",
-                            emptyMessage: "No saved places yet."
-                        )
-                    } label: {
-                        Text("My Places")
-                            .font(.heading(13))
-                            .tracking(1.5)
-                            .foregroundStyle(Color.bronze)
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink {
-                        RoutesListView(
-                            viewModel: RoutesListViewModel(routeStore: routeStore, launcher: launcher, filter: .routes),
-                            title: "My Routes",
-                            emptyMessage: "No saved routes yet."
-                        )
+                        MenuView(routeStore: routeStore, launcher: launcher)
                     } label: {
-                        Text("My Routes")
-                            .font(.heading(13))
-                            .tracking(1.5)
+                        Image(systemName: "line.3.horizontal")
                             .foregroundStyle(Color.bronze)
                     }
                 }
