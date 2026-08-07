@@ -9,7 +9,7 @@ final class AddressAutocompleter: NSObject, ObservableObject, MKLocalSearchCompl
     override init() {
         super.init()
         completer.delegate = self
-        completer.resultTypes = .address
+        completer.resultTypes = [.address, .pointOfInterest, .query]
     }
 
     func updateQuery(_ query: String) {

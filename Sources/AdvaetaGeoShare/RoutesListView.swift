@@ -3,9 +3,13 @@ import SwiftUI
 struct RoutesListView: View {
     @StateObject private var viewModel: RoutesListViewModel
     @State private var openError: String?
+    let title: String
+    let emptyMessage: String
 
-    init(viewModel: RoutesListViewModel) {
+    init(viewModel: RoutesListViewModel, title: String, emptyMessage: String) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        self.title = title
+        self.emptyMessage = emptyMessage
     }
 
     var body: some View {
@@ -13,7 +17,7 @@ struct RoutesListView: View {
             Color.backgroundBlack.ignoresSafeArea()
 
             if viewModel.routes.isEmpty {
-                Text("No saved routes yet.")
+                Text(emptyMessage)
                     .font(.body(18))
                     .foregroundStyle(Color.textMuted)
             } else {
@@ -31,10 +35,12 @@ struct RoutesListView: View {
                                 Text(route.name)
                                     .font(.heading(16))
                                     .foregroundStyle(Color.textCream)
-                                Text(subtitle(for: route))
-                                    .font(.caption(15))
-                                    .italic()
-                                    .foregroundStyle(Color.textMuted)
+                                if let subtitle = subtitle(for: route) {
+                                    Text(subtitle)
+                                        .font(.caption(15))
+                                        .italic()
+                                        .foregroundStyle(Color.textMuted)
+                                }
                             }
                             .padding(.vertical, 6)
                         }
@@ -50,7 +56,7 @@ struct RoutesListView: View {
                 .scrollContentBackground(.hidden)
             }
         }
-        .navigationTitle("My Routes")
+        .navigationTitle(title)
         .toolbarBackground(Color.backgroundBlack, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear { viewModel.loadRoutes() }
@@ -62,14 +68,13 @@ struct RoutesListView: View {
         .preferredColorScheme(.dark)
     }
 
-    private func subtitle(for route: SavedRoute) -> String {
-        let base: String
+    private func subtitle(for route: SavedRoute) -> String? {
         switch route.location {
         case .point:
-            base = "Single location"
+            return route.startNavigationByDefault ? "Auto-navigate" : nil
         case .route(let stops):
-            base = "\(stops.count)-stop route"
+            let base = "\(stops.count)-stop route"
+            return route.startNavigationByDefault ? "\(base) · Auto-navigate" : base
         }
-        return route.startNavigationByDefault ? "\(base) · Auto-navigate" : base
     }
 }
