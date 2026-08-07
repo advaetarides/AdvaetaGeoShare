@@ -16,6 +16,7 @@ targets:
       path: Sources/AdvaetaGeoShare/Info.plist
       properties:
         CFBundleDisplayName: AdvaetaGeoShare
+        CFBundleVersion: "2"
         UILaunchScreen: {}
         LSApplicationQueriesSchemes:
           - osmandmaps

@@ -75,6 +75,17 @@ struct ContentView: View {
                 }
 
                 Spacer()
+
+                // Temporary debug footer to help diagnose the "OsmAnd not installed" report —
+                // shows the build version and the schemes actually declared in the installed
+                // app's Info.plist, since that's what canOpenURL actually checks at runtime.
+                VStack(spacing: 2) {
+                    Text("Build \(Self.buildVersionString())")
+                    Text("Query schemes: \(Self.declaredQuerySchemes())")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 8)
             }
             .padding(.top, 40)
             .toolbar {
@@ -105,5 +116,17 @@ struct ContentView: View {
 
     private var isInputEmpty: Bool {
         viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private static func buildVersionString() -> String {
+        let info = Bundle.main.infoDictionary
+        let shortVersion = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let buildNumber = info?["CFBundleVersion"] as? String ?? "?"
+        return "\(shortVersion) (\(buildNumber))"
+    }
+
+    private static func declaredQuerySchemes() -> String {
+        let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? []
+        return schemes.isEmpty ? "none" : schemes.joined(separator: ", ")
     }
 }
