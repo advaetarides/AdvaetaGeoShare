@@ -10,11 +10,13 @@ final class ConversionViewModel: ObservableObject {
 
     @Published private(set) var state: State = .idle
     @Published var inputText: String = ""
+    @Published private(set) var recentSearches: [RecentSearch]
 
     private let parser: LinkParsing
     private let geocoder: AddressGeocoding
     private let launcher: OsmAndOpening
     private let routeStore: RouteStoring
+    private let recentSearchStore: RecentSearchStoring
     private var pendingSaveLocation: ParsedLocation?
 
     var pendingLocationIsPoint: Bool {
@@ -22,11 +24,19 @@ final class ConversionViewModel: ObservableObject {
         return false
     }
 
-    init(parser: LinkParsing, geocoder: AddressGeocoding, launcher: OsmAndOpening, routeStore: RouteStoring) {
+    init(
+        parser: LinkParsing,
+        geocoder: AddressGeocoding,
+        launcher: OsmAndOpening,
+        routeStore: RouteStoring,
+        recentSearchStore: RecentSearchStoring
+    ) {
         self.parser = parser
         self.geocoder = geocoder
         self.launcher = launcher
         self.routeStore = routeStore
+        self.recentSearchStore = recentSearchStore
+        self.recentSearches = recentSearchStore.loadAll()
     }
 
     func convert() async {
@@ -35,12 +45,23 @@ final class ConversionViewModel: ObservableObject {
         case .success(let location):
             switch await launcher.open(location, startNavigation: false) {
             case .opened:
+                recordRecentSearch(label: inputText, location: location)
                 state = .idle
             case .osmAndNotInstalled:
                 state = .error("OsmAnd isn't installed. Install it from the App Store to continue.")
             }
         case .failure(let failure):
             state = .error(failure.message)
+        }
+    }
+
+    func openRecentSearch(_ search: RecentSearch) async {
+        state = .resolving
+        switch await launcher.open(search.location.parsed, startNavigation: false) {
+        case .opened:
+            state = .idle
+        case .osmAndNotInstalled:
+            state = .error("OsmAnd isn't installed. Install it from the App Store to continue.")
         }
     }
 
@@ -73,6 +94,18 @@ final class ConversionViewModel: ObservableObject {
     func cancelSave() {
         pendingSaveLocation = nil
         state = .idle
+    }
+
+    private func recordRecentSearch(label: String, location: ParsedLocation) {
+        let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let search = RecentSearch(
+            id: UUID(),
+            label: String(trimmedLabel.prefix(60)),
+            location: location.stored,
+            openedAt: Date()
+        )
+        recentSearchStore.record(search)
+        recentSearches = recentSearchStore.loadAll()
     }
 
     // A link parse failure of .notAMapsLink means the text isn't a URL at all, so it's

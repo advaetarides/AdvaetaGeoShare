@@ -18,6 +18,10 @@ struct ContentView: View {
         NavigationStack {
             ZStack {
                 Color.backgroundBlack.ignoresSafeArea()
+                    .onTapGesture {
+                        fieldIsFocused = false
+                        autocompleter.clear()
+                    }
 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -137,6 +141,46 @@ struct ContentView: View {
                                 .foregroundStyle(Color.bronzeBright)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
+                        }
+
+                        if !viewModel.recentSearches.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Recent")
+                                    .font(.heading(13))
+                                    .tracking(1.5)
+                                    .foregroundStyle(Color.textMuted)
+                                    .padding(.horizontal)
+
+                                VStack(spacing: 0) {
+                                    let recents = viewModel.recentSearches
+                                    ForEach(Array(recents.enumerated()), id: \.element.id) { index, search in
+                                        Button {
+                                            Task {
+                                                await viewModel.openRecentSearch(search)
+                                            }
+                                        } label: {
+                                            Text(search.label)
+                                                .font(.body(16))
+                                                .foregroundStyle(Color.textCream)
+                                                .lineLimit(1)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .padding(10)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(viewModel.state == .resolving)
+
+                                        if index != recents.count - 1 {
+                                            Rectangle()
+                                                .fill(Color.bronzeDim.opacity(0.2))
+                                                .frame(height: 1)
+                                        }
+                                    }
+                                }
+                                .background(Color.backgroundSoft)
+                                .overlay(Rectangle().strokeBorder(Color.bronzeDim.opacity(0.5), lineWidth: 1))
+                                .padding(.horizontal)
+                            }
+                            .padding(.top, 8)
                         }
                     }
                     .padding(.top, 20)

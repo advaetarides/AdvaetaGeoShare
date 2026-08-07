@@ -29,9 +29,16 @@ final class ConversionViewModelTests: XCTestCase {
         parser: LinkParsing,
         geocoder: AddressGeocoding = MockGeocoder(result: .failure(.notFound)),
         launcher: OsmAndOpening,
-        routeStore: RouteStoring = MockRouteStore()
+        routeStore: RouteStoring = MockRouteStore(),
+        recentSearchStore: RecentSearchStoring = MockRecentSearchStore()
     ) -> ConversionViewModel {
-        ConversionViewModel(parser: parser, geocoder: geocoder, launcher: launcher, routeStore: routeStore)
+        ConversionViewModel(
+            parser: parser,
+            geocoder: geocoder,
+            launcher: launcher,
+            routeStore: routeStore,
+            recentSearchStore: recentSearchStore
+        )
     }
 
     func testSuccessfulConversionEndsInIdleState() async {
@@ -213,5 +220,55 @@ final class ConversionViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.state, .idle)
         XCTAssertTrue(store.loadAll().isEmpty)
+    }
+
+    func testSuccessfulConversionRecordsARecentSearch() async {
+        let recentSearchStore = MockRecentSearchStore()
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
+            launcher: MockLauncher(result: .opened),
+            recentSearchStore: recentSearchStore
+        )
+        viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+
+        await viewModel.convert()
+
+        XCTAssertEqual(viewModel.recentSearches.count, 1)
+        XCTAssertEqual(viewModel.recentSearches.first?.label, "https://www.google.com/maps/@1,2,15z")
+        XCTAssertEqual(recentSearchStore.loadAll().count, 1)
+    }
+
+    func testFailedConversionDoesNotRecordARecentSearch() async {
+        let recentSearchStore = MockRecentSearchStore()
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
+            launcher: MockLauncher(result: .osmAndNotInstalled),
+            recentSearchStore: recentSearchStore
+        )
+        viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+
+        await viewModel.convert()
+
+        XCTAssertTrue(viewModel.recentSearches.isEmpty)
+    }
+
+    func testOpenRecentSearchOpensTheStoredLocation() async {
+        let recentSearchStore = MockRecentSearchStore()
+        let search = RecentSearch(
+            id: UUID(),
+            label: "Somewhere",
+            location: .point(StoredCoordinate(latitude: 5, longitude: 6)),
+            openedAt: Date()
+        )
+        recentSearchStore.record(search)
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .failure(.notAMapsLink)),
+            launcher: MockLauncher(result: .opened),
+            recentSearchStore: recentSearchStore
+        )
+
+        await viewModel.openRecentSearch(search)
+
+        XCTAssertEqual(viewModel.state, .idle)
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct AdvaetaGeoShareApp: App {
     private let routeStore = JSONRouteStore()
+    private let recentSearchStore = JSONRecentSearchStore()
 
     var body: some Scene {
         WindowGroup {
@@ -11,7 +12,8 @@ struct AdvaetaGeoShareApp: App {
                     parser: GoogleMapsLinkParser(),
                     geocoder: CLGeocoderAddressGeocoder(),
                     launcher: OsmAndLauncher(urlOpener: UIApplication.shared),
-                    routeStore: routeStore
+                    routeStore: routeStore,
+                    recentSearchStore: recentSearchStore
                 ),
                 routeStore: routeStore,
                 launcher: OsmAndLauncher(urlOpener: UIApplication.shared)
