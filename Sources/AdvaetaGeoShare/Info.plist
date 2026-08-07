@@ -19,10 +19,21 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>osmandmaps</string>
+	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Cinzel-Regular.ttf</string>
+		<string>Cinzel-Bold.ttf</string>
+		<string>Cinzel-Black.ttf</string>
+		<string>CinzelDecorative-Bold.ttf</string>
+		<string>CinzelDecorative-Black.ttf</string>
+		<string>CormorantGaramond-Regular.ttf</string>
+		<string>CormorantGaramond-Medium.ttf</string>
+		<string>CormorantGaramond-SemiBold.ttf</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

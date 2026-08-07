@@ -16,10 +16,19 @@ targets:
       path: Sources/AdvaetaGeoShare/Info.plist
       properties:
         CFBundleDisplayName: AdvaetaGeoShare
-        CFBundleVersion: "3"
+        CFBundleVersion: "4"
         UILaunchScreen: {}
         LSApplicationQueriesSchemes:
           - osmandmaps
+        UIAppFonts:
+          - Cinzel-Regular.ttf
+          - Cinzel-Bold.ttf
+          - Cinzel-Black.ttf
+          - CinzelDecorative-Bold.ttf
+          - CinzelDecorative-Black.ttf
+          - CormorantGaramond-Regular.ttf
+          - CormorantGaramond-Medium.ttf
+          - CormorantGaramond-SemiBold.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.advaetarides.AdvaetaGeoShare

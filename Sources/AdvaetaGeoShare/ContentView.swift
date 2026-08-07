@@ -14,87 +14,101 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                Text("AdvaetaGeoShare")
-                    .font(.title2)
-                    .bold()
+            ZStack {
+                Color.backgroundBlack.ignoresSafeArea()
 
-                TextField("Paste a Google Maps link or type an address/postcode", text: $viewModel.inputText, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(.horizontal)
+                VStack(spacing: 20) {
+                    MedallionLogo(diameter: 96)
+                        .padding(.top, 24)
 
-                HStack(spacing: 12) {
-                    Button {
-                        if let clipboardText = UIPasteboard.general.string {
-                            viewModel.inputText = clipboardText
-                        }
-                    } label: {
-                        Label("Paste", systemImage: "doc.on.clipboard")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    Text("AdvaetaGeoShare")
+                        .font(.display(30))
+                        .foregroundStyle(Color.bronze)
+                        .tracking(1)
 
-                    Button {
-                        viewModel.inputText = ""
-                    } label: {
-                        Label("Clear", systemImage: "xmark.circle")
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(isInputEmpty)
-                }
+                    Text("Paste a link. Find your way.")
+                        .font(.caption(16))
+                        .italic()
+                        .foregroundStyle(Color.textMuted)
 
-                HStack(spacing: 12) {
-                    Button("Open in OsmAnd") {
-                        Task {
-                            await viewModel.convert()
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isInputEmpty || viewModel.state == .resolving)
-
-                    Button("Save") {
-                        Task {
-                            await viewModel.saveRouteTapped()
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isInputEmpty || viewModel.state == .resolving)
-                }
-
-                switch viewModel.state {
-                case .idle, .promptingForRouteName:
-                    EmptyView()
-                case .resolving:
-                    ProgressView("Resolving location…")
-                case .error(let message):
-                    Text(message)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
+                    TextField("Paste a Google Maps link or type an address/postcode", text: $viewModel.inputText, axis: .vertical)
+                        .goldFieldStyle()
                         .padding(.horizontal)
-                }
+                        .padding(.top, 8)
 
-                Spacer()
+                    HStack(spacing: 12) {
+                        Button {
+                            if let clipboardText = UIPasteboard.general.string {
+                                viewModel.inputText = clipboardText
+                            }
+                        } label: {
+                            Label("Paste", systemImage: "doc.on.clipboard")
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle(tint: .darkBrown, textColor: .textMuted))
 
-                // Temporary debug footer to help diagnose the "OsmAnd not installed" report —
-                // shows the build version and the schemes actually declared in the installed
-                // app's Info.plist, since that's what canOpenURL actually checks at runtime.
-                VStack(spacing: 2) {
-                    Text("Build \(Self.buildVersionString())")
-                    Text("Query schemes: \(Self.declaredQuerySchemes())")
+                        Button {
+                            viewModel.inputText = ""
+                        } label: {
+                            Label("Clear", systemImage: "xmark.circle")
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle(tint: .darkBrown, textColor: .textMuted))
+                        .disabled(isInputEmpty)
+                        .opacity(isInputEmpty ? 0.4 : 1)
+                    }
+
+                    HStack(spacing: 12) {
+                        Button("Open in OsmAnd") {
+                            Task {
+                                await viewModel.convert()
+                            }
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle())
+                        .disabled(isInputEmpty || viewModel.state == .resolving)
+                        .opacity(isInputEmpty || viewModel.state == .resolving ? 0.4 : 1)
+
+                        Button("Save") {
+                            Task {
+                                await viewModel.saveRouteTapped()
+                            }
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle(tint: .tealAccent, textColor: .tealLight))
+                        .disabled(isInputEmpty || viewModel.state == .resolving)
+                        .opacity(isInputEmpty || viewModel.state == .resolving ? 0.4 : 1)
+                    }
+
+                    switch viewModel.state {
+                    case .idle, .promptingForRouteName:
+                        EmptyView()
+                    case .resolving:
+                        ProgressView("Resolving location…")
+                            .tint(Color.bronze)
+                            .foregroundStyle(Color.textMuted)
+                    case .error(let message):
+                        Text(message)
+                            .font(.caption(17))
+                            .foregroundStyle(Color.bronzeBright)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+
+                    Spacer()
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 8)
+                .padding(.top, 20)
             }
-            .padding(.top, 40)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink("My Routes") {
+                    NavigationLink {
                         RoutesListView(viewModel: RoutesListViewModel(routeStore: routeStore, launcher: launcher))
+                    } label: {
+                        Text("My Routes")
+                            .font(.heading(13))
+                            .tracking(1.5)
+                            .foregroundStyle(Color.bronze)
                     }
                 }
             }
+            .toolbarBackground(Color.backgroundBlack, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .sheet(
                 isPresented: Binding(
                     get: { viewModel.state == .promptingForRouteName },
@@ -112,21 +126,10 @@ struct ContentView: View {
                 )
             }
         }
+        .preferredColorScheme(.dark)
     }
 
     private var isInputEmpty: Bool {
         viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private static func buildVersionString() -> String {
-        let info = Bundle.main.infoDictionary
-        let shortVersion = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let buildNumber = info?["CFBundleVersion"] as? String ?? "?"
-        return "\(shortVersion) (\(buildNumber))"
-    }
-
-    private static func declaredQuerySchemes() -> String {
-        let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? []
-        return schemes.isEmpty ? "none" : schemes.joined(separator: ", ")
     }
 }

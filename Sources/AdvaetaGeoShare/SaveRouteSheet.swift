@@ -10,21 +10,50 @@ struct SaveRouteSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                TextField("Route name", text: $name)
-                if showsStartNavigationToggle {
-                    Toggle("Start navigating automatically", isOn: $startNavigationByDefault)
+            ZStack {
+                Color.backgroundBlack.ignoresSafeArea()
+
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Name This Route")
+                        .font(.heading(20))
+                        .tracking(1.5)
+                        .foregroundStyle(Color.bronze)
+                        .padding(.top, 24)
+
+                    TextField("Route name", text: $name)
+                        .goldFieldStyle()
+
+                    if showsStartNavigationToggle {
+                        Toggle(isOn: $startNavigationByDefault) {
+                            Text("Start navigating automatically")
+                                .font(.body(17))
+                                .foregroundStyle(Color.textCream)
+                        }
+                        .tint(Color.tealAccent)
+                    }
+
+                    Spacer()
                 }
+                .padding(.horizontal, 20)
             }
-            .navigationTitle("Save Route")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .font(.heading(13))
+                        .tracking(1)
+                        .foregroundStyle(Color.textMuted)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { onSave(name, startNavigationByDefault) }
+                        .font(.heading(13))
+                        .tracking(1)
+                        .foregroundStyle(Color.bronze)
                 }
             }
+            .toolbarBackground(Color.backgroundBlack, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
+        .presentationDetents([.medium])
+        .preferredColorScheme(.dark)
     }
 }
