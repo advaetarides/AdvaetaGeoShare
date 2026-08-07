@@ -207,9 +207,13 @@ struct ContentView: View {
                 )
             ) {
                 SaveRouteSheet(
-                    showsStartNavigationToggle: viewModel.pendingLocationIsPoint,
-                    onSave: { name, startNavigationByDefault in
-                        viewModel.confirmSave(name: name, startNavigationByDefault: startNavigationByDefault)
+                    stopCount: viewModel.pendingLocationStopCount,
+                    onSave: { name, startNavigationByDefault, saveDestinationOnly in
+                        viewModel.confirmSave(
+                            name: name,
+                            startNavigationByDefault: startNavigationByDefault,
+                            saveDestinationOnly: saveDestinationOnly
+                        )
                     },
                     onCancel: {
                         viewModel.cancelSave()

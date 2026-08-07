@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct SaveRouteSheet: View {
-    let showsStartNavigationToggle: Bool
-    let onSave: (String, Bool) -> Void
+    let stopCount: Int?
+    let onSave: (String, Bool, Bool) -> Void
     let onCancel: () -> Void
 
     @State private var name: String = ""
     @State private var startNavigationByDefault: Bool = false
+    @State private var saveDestinationOnly: Bool = false
+
+    private var isMultiStopRoute: Bool { stopCount != nil }
+    private var showsStartNavigationToggle: Bool { !isMultiStopRoute || saveDestinationOnly }
 
     var body: some View {
         NavigationStack {
@@ -14,14 +18,23 @@ struct SaveRouteSheet: View {
                 Color.backgroundBlack.ignoresSafeArea()
 
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Name This Route")
+                    Text(isMultiStopRoute ? "Name This Route" : "Name This Place")
                         .font(.heading(20))
                         .tracking(1.5)
                         .foregroundStyle(Color.bronze)
                         .padding(.top, 24)
 
-                    TextField("Route name", text: $name)
+                    TextField(isMultiStopRoute ? "Route name" : "Place name", text: $name)
                         .goldFieldStyle()
+
+                    if let stopCount {
+                        Toggle(isOn: $saveDestinationOnly) {
+                            Text("Save destination only (not the \(stopCount)-stop route)")
+                                .font(.body(17))
+                                .foregroundStyle(Color.textCream)
+                        }
+                        .tint(Color.tealAccent)
+                    }
 
                     if showsStartNavigationToggle {
                         Toggle(isOn: $startNavigationByDefault) {
@@ -44,7 +57,7 @@ struct SaveRouteSheet: View {
                         .foregroundStyle(Color.textMuted)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { onSave(name, startNavigationByDefault) }
+                    Button("Save") { onSave(name, startNavigationByDefault, saveDestinationOnly) }
                         .font(.heading(13))
                         .tracking(1)
                         .foregroundStyle(Color.bronze)

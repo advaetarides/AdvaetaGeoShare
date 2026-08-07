@@ -24,6 +24,12 @@ final class ConversionViewModel: ObservableObject {
         return false
     }
 
+    /// Number of stops if the pending save is a multi-stop route, nil for a single point.
+    var pendingLocationStopCount: Int? {
+        if case .route(let stops) = pendingSaveLocation { return stops.count }
+        return nil
+    }
+
     init(
         parser: LinkParsing,
         geocoder: AddressGeocoding,
@@ -76,13 +82,20 @@ final class ConversionViewModel: ObservableObject {
         }
     }
 
-    func confirmSave(name: String, startNavigationByDefault: Bool) {
+    func confirmSave(name: String, startNavigationByDefault: Bool, saveDestinationOnly: Bool) {
         guard let location = pendingSaveLocation else { return }
+        let effectiveLocation: ParsedLocation
+        if saveDestinationOnly, case .route(let stops) = location, let destination = stops.last {
+            effectiveLocation = .point(destination)
+        } else {
+            effectiveLocation = location
+        }
+
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let route = SavedRoute(
             id: UUID(),
             name: trimmedName.isEmpty ? "Untitled Route" : trimmedName,
-            location: location.stored,
+            location: effectiveLocation.stored,
             savedAt: Date(),
             startNavigationByDefault: startNavigationByDefault
         )

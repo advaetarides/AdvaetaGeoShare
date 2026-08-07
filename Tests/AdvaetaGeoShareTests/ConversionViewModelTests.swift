@@ -156,6 +156,7 @@ final class ConversionViewModelTests: XCTestCase {
         await viewModel.saveRouteTapped()
 
         XCTAssertFalse(viewModel.pendingLocationIsPoint)
+        XCTAssertEqual(viewModel.pendingLocationStopCount, 2)
     }
 
     func testSaveRouteTappedShowsErrorOnParseFailure() async {
@@ -181,7 +182,7 @@ final class ConversionViewModelTests: XCTestCase {
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
         await viewModel.saveRouteTapped()
 
-        viewModel.confirmSave(name: "My Route", startNavigationByDefault: true)
+        viewModel.confirmSave(name: "My Route", startNavigationByDefault: true, saveDestinationOnly: false)
 
         XCTAssertEqual(viewModel.state, .idle)
         let saved = store.loadAll()
@@ -201,9 +202,31 @@ final class ConversionViewModelTests: XCTestCase {
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
         await viewModel.saveRouteTapped()
 
-        viewModel.confirmSave(name: "   ", startNavigationByDefault: false)
+        viewModel.confirmSave(name: "   ", startNavigationByDefault: false, saveDestinationOnly: false)
 
         XCTAssertEqual(store.loadAll().first?.name, "Untitled Route")
+    }
+
+    func testConfirmSaveWithDestinationOnlySavesJustTheLastStopAsAPoint() async {
+        let store = MockRouteStore()
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.route(stops: [
+                CLLocationCoordinate2D(latitude: 1, longitude: 2),
+                CLLocationCoordinate2D(latitude: 3, longitude: 4),
+                CLLocationCoordinate2D(latitude: 5, longitude: 6),
+            ]))),
+            launcher: MockLauncher(result: .opened),
+            routeStore: store
+        )
+        viewModel.inputText = "https://www.google.com/maps/dir/A/B/C/data=..."
+        await viewModel.saveRouteTapped()
+
+        viewModel.confirmSave(name: "Just the destination", startNavigationByDefault: true, saveDestinationOnly: true)
+
+        let saved = store.loadAll()
+        XCTAssertEqual(saved.count, 1)
+        XCTAssertEqual(saved.first?.location, .point(StoredCoordinate(latitude: 5, longitude: 6)))
+        XCTAssertEqual(saved.first?.startNavigationByDefault, true)
     }
 
     func testCancelSaveDiscardsThePendingRouteAndReturnsToIdle() async {
