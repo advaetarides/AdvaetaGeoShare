@@ -4,7 +4,12 @@ import SwiftUI
 struct AdvaetaGeoShareApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(
+                viewModel: ConversionViewModel(
+                    parser: GoogleMapsLinkParser(),
+                    launcher: OsmAndLauncher(urlOpener: UIApplication.shared)
+                )
+            )
         }
     }
 }
