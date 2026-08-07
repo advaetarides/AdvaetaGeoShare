@@ -23,6 +23,7 @@
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>osmandmaps</string>
+		<string>geo-navigation</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

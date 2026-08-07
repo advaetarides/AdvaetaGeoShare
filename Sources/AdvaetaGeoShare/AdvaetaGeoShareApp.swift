@@ -9,6 +9,7 @@ struct AdvaetaGeoShareApp: App {
             ContentView(
                 viewModel: ConversionViewModel(
                     parser: GoogleMapsLinkParser(),
+                    geocoder: CLGeocoderAddressGeocoder(),
                     launcher: OsmAndLauncher(urlOpener: UIApplication.shared),
                     routeStore: routeStore
                 ),

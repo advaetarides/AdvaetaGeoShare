@@ -49,11 +49,13 @@ struct RoutesListView: View {
     }
 
     private func subtitle(for route: SavedRoute) -> String {
+        let base: String
         switch route.location {
         case .point:
-            return "Single location"
+            base = "Single location"
         case .route(let stops):
-            return "\(stops.count)-stop route"
+            base = "\(stops.count)-stop route"
         }
+        return route.startNavigationByDefault ? "\(base) · Auto-navigate" : base
     }
 }

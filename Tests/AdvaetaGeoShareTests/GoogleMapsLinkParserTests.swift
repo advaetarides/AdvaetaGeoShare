@@ -110,6 +110,28 @@ final class GoogleMapsLinkParserTests: XCTestCase {
         }
     }
 
+    func testShortLinkResolvingToADirectionsPageReturnsRoute() async {
+        let shortURL = URL(string: "https://maps.app.goo.gl/routeShare123")!
+        let finalURL = URL(string: "https://www.google.com/maps/dir/A/B/data=!4m10!4m9!1m5!1m1!19sABC!2m2!1d10.0!2d20.0!1m5!1m1!19sDEF!2m2!1d11.0!2d21.0")!
+
+        MockURLProtocol.stubs = [
+            shortURL: .init(statusCode: 302, headers: ["Location": finalURL.absoluteString]),
+            finalURL: .init(statusCode: 200, headers: [:]),
+        ]
+
+        let parser = GoogleMapsLinkParser(session: MockURLProtocol.mockedSession())
+        let result = await parser.parse(shortURL.absoluteString)
+
+        switch result {
+        case .success(.route(let stops)):
+            XCTAssertEqual(stops.count, 2)
+            XCTAssertEqual(stops[0].latitude, 20.0, accuracy: 0.0001)
+            XCTAssertEqual(stops[1].latitude, 21.0, accuracy: 0.0001)
+        default:
+            XCTFail("Expected a short link resolving to a directions page to return a route, got \(result)")
+        }
+    }
+
     func testDirectionsLinkWithMultipleStopsReturnsRoute() async {
         let parser = GoogleMapsLinkParser()
         let input = "https://www.google.com/maps/dir/Snake+Pass+Summit,+Pennine+Way,+Sheffield,+United+Kingdom/The+Yondermann+Cafe,+A623,+Wardlow+Mires,+Buxton,+United+Kingdom/Winnats+Pass,+United+Kingdom/data=!4m20!4m19!1m5!1m1!19sChIJG3dQeDnNe0gRPe_IEQx8naM!2m2!1d-1.8689129999999998!2d53.4329149!1m5!1m1!19sChIJEVo7dygsekgRzQtrNQtVk1Q!2m2!1d-1.7293243999999999!2d53.276708299999996!1m5!1m1!19sChIJzVyHEg8tekgR8mYhzMcT-Mo!2m2!1d-1.8008441!2d53.341446499999996!3e0?entry=gemini&utm_source=gemini&utm_campaign=gem-default"

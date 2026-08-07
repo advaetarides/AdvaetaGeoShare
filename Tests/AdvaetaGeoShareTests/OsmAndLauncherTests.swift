@@ -24,11 +24,28 @@ final class OsmAndLauncherTests: XCTestCase {
         let launcher = OsmAndLauncher(urlOpener: opener)
         let coordinate = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
 
-        let result = await launcher.open(.point(coordinate))
+        let result = await launcher.open(.point(coordinate), startNavigation: false)
 
         XCTAssertEqual(result, .opened)
         let openedURL = try XCTUnwrap(opener.openedURL)
         XCTAssertEqual(openedURL.scheme, "osmandmaps")
+        XCTAssertNotEqual(openedURL.host, "navigate")
+        XCTAssertTrue(openedURL.query?.contains("lat=37.7749") ?? false)
+        XCTAssertTrue(openedURL.query?.contains("lon=-122.4194") ?? false)
+    }
+
+    func testOpensOsmAndWithNavigateURLWhenStartNavigationIsTrue() async throws {
+        let opener = MockURLOpener()
+        opener.canOpenResult = true
+        let launcher = OsmAndLauncher(urlOpener: opener)
+        let coordinate = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+
+        let result = await launcher.open(.point(coordinate), startNavigation: true)
+
+        XCTAssertEqual(result, .opened)
+        let openedURL = try XCTUnwrap(opener.openedURL)
+        XCTAssertEqual(openedURL.scheme, "osmandmaps")
+        XCTAssertEqual(openedURL.host, "navigate")
         XCTAssertTrue(openedURL.query?.contains("lat=37.7749") ?? false)
         XCTAssertTrue(openedURL.query?.contains("lon=-122.4194") ?? false)
     }
@@ -43,7 +60,7 @@ final class OsmAndLauncherTests: XCTestCase {
             CLLocationCoordinate2D(latitude: 53.3414465, longitude: -1.8008441),
         ]
 
-        let result = await launcher.open(.route(stops: stops))
+        let result = await launcher.open(.route(stops: stops), startNavigation: false)
 
         XCTAssertEqual(result, .opened)
         let openedURL = try XCTUnwrap(opener.openedURL)
@@ -60,9 +77,18 @@ final class OsmAndLauncherTests: XCTestCase {
         opener.canOpenResult = false
         let launcher = OsmAndLauncher(urlOpener: opener)
 
-        let result = await launcher.open(.point(CLLocationCoordinate2D(latitude: 0, longitude: 0)))
+        let result = await launcher.open(.point(CLLocationCoordinate2D(latitude: 0, longitude: 0)), startNavigation: false)
 
         XCTAssertEqual(result, .osmAndNotInstalled)
         XCTAssertNil(opener.openedURL)
+    }
+
+    // Regression guard: canOpenURL silently returns false for any scheme not declared here,
+    // which reads identically to "OsmAnd isn't installed" even when it is. This caught a real
+    // bug where "geo-navigation" was added to OsmAndLauncher but never added to Info.plist.
+    func testAppDeclaresBothSchemesOsmAndLauncherUses() {
+        let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? []
+        XCTAssertTrue(schemes.contains("osmandmaps"), "osmandmaps must be declared in LSApplicationQueriesSchemes")
+        XCTAssertTrue(schemes.contains("geo-navigation"), "geo-navigation must be declared in LSApplicationQueriesSchemes")
     }
 }

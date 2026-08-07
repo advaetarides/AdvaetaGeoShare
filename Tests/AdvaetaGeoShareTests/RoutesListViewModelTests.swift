@@ -5,9 +5,11 @@ import CoreLocation
 private final class MockLauncher: OsmAndOpening {
     var result: LaunchResult = .opened
     var openedLocation: ParsedLocation?
+    var openedStartNavigation: Bool?
 
-    func open(_ location: ParsedLocation) async -> LaunchResult {
+    func open(_ location: ParsedLocation, startNavigation: Bool) async -> LaunchResult {
         openedLocation = location
+        openedStartNavigation = startNavigation
         return result
     }
 }
@@ -60,5 +62,22 @@ final class RoutesListViewModelTests: XCTestCase {
         default:
             XCTFail("Expected the route's stops to be passed to the launcher")
         }
+    }
+
+    func testOpenPassesTheRoutesStartNavigationPreferenceToTheLauncher() async {
+        let store = MockRouteStore()
+        let launcher = MockLauncher()
+        let route = SavedRoute(
+            id: UUID(),
+            name: "Home",
+            location: .point(StoredCoordinate(latitude: 1, longitude: 2)),
+            savedAt: Date(),
+            startNavigationByDefault: true
+        )
+        let viewModel = RoutesListViewModel(routeStore: store, launcher: launcher)
+
+        _ = await viewModel.open(route)
+
+        XCTAssertEqual(launcher.openedStartNavigation, true)
     }
 }

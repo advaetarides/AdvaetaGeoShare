@@ -23,6 +23,6 @@ final class RoutesListViewModel {
     }
 
     func open(_ route: SavedRoute) async -> LaunchResult {
-        await launcher.open(route.location.parsed)
+        await launcher.open(route.location.parsed, startNavigation: route.startNavigationByDefault)
     }
 }

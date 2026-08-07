@@ -23,7 +23,7 @@ extension UIApplication: URLOpening {
 }
 
 protocol OsmAndOpening {
-    func open(_ location: ParsedLocation) async -> LaunchResult
+    func open(_ location: ParsedLocation, startNavigation: Bool) async -> LaunchResult
 }
 
 struct OsmAndLauncher: OsmAndOpening {
@@ -33,11 +33,11 @@ struct OsmAndLauncher: OsmAndOpening {
         self.urlOpener = urlOpener
     }
 
-    func open(_ location: ParsedLocation) async -> LaunchResult {
+    func open(_ location: ParsedLocation, startNavigation: Bool) async -> LaunchResult {
         let url: URL?
         switch location {
         case .point(let coordinate):
-            url = Self.pointURL(for: coordinate)
+            url = startNavigation ? Self.navigateURL(for: coordinate) : Self.pointURL(for: coordinate)
         case .route(let stops):
             url = Self.routeURL(for: stops)
         }
@@ -53,6 +53,21 @@ struct OsmAndLauncher: OsmAndOpening {
         var components = URLComponents()
         components.scheme = "osmandmaps"
         components.host = ""  // forces "osmandmaps://" (empty authority) to match OsmAnd's documented URL format
+        components.queryItems = [
+            URLQueryItem(name: "lat", value: String(coordinate.latitude)),
+            URLQueryItem(name: "lon", value: String(coordinate.longitude)),
+            URLQueryItem(name: "z", value: "15"),
+        ]
+        return components.url
+    }
+
+    // "navigate" host tells OsmAnd to start turn-by-turn guidance immediately from the
+    // device's current location, per OsmAnd's kNavigateActionHost handling — the plain
+    // pointURL() above only re-centers the map without starting navigation.
+    private static func navigateURL(for coordinate: CLLocationCoordinate2D) -> URL? {
+        var components = URLComponents()
+        components.scheme = "osmandmaps"
+        components.host = "navigate"
         components.queryItems = [
             URLQueryItem(name: "lat", value: String(coordinate.latitude)),
             URLQueryItem(name: "lon", value: String(coordinate.longitude)),

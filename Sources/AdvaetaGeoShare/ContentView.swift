@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var viewModel: ConversionViewModel
-    @State private var routeName: String = ""
     private let routeStore: RouteStoring
     private let launcher: OsmAndOpening
 
@@ -19,7 +18,7 @@ struct ContentView: View {
                     .font(.title2)
                     .bold()
 
-                TextField("Paste a Google Maps link", text: $viewModel.inputText, axis: .vertical)
+                TextField("Paste a Google Maps link or type an address/postcode", text: $viewModel.inputText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal)
 
@@ -63,22 +62,21 @@ struct ContentView: View {
                     }
                 }
             }
-            .alert(
-                "Name This Route",
+            .sheet(
                 isPresented: Binding(
                     get: { viewModel.state == .promptingForRouteName },
                     set: { isPresented in if !isPresented { viewModel.cancelSave() } }
                 )
             ) {
-                TextField("Route name", text: $routeName)
-                Button("Save") {
-                    viewModel.confirmSave(name: routeName)
-                    routeName = ""
-                }
-                Button("Cancel", role: .cancel) {
-                    viewModel.cancelSave()
-                    routeName = ""
-                }
+                SaveRouteSheet(
+                    showsStartNavigationToggle: viewModel.pendingLocationIsPoint,
+                    onSave: { name, startNavigationByDefault in
+                        viewModel.confirmSave(name: name, startNavigationByDefault: startNavigationByDefault)
+                    },
+                    onCancel: {
+                        viewModel.cancelSave()
+                    }
+                )
             }
         }
     }

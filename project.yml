@@ -19,6 +19,7 @@ targets:
         UILaunchScreen: {}
         LSApplicationQueriesSchemes:
           - osmandmaps
+          - geo-navigation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.advaetarides.AdvaetaGeoShare

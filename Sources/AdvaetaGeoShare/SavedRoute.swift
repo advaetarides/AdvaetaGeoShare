@@ -16,6 +16,29 @@ struct SavedRoute: Identifiable, Codable, Equatable {
     var name: String
     let location: StoredLocation
     let savedAt: Date
+    var startNavigationByDefault: Bool
+
+    init(id: UUID, name: String, location: StoredLocation, savedAt: Date, startNavigationByDefault: Bool = false) {
+        self.id = id
+        self.name = name
+        self.location = location
+        self.savedAt = savedAt
+        self.startNavigationByDefault = startNavigationByDefault
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, location, savedAt, startNavigationByDefault
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        location = try container.decode(StoredLocation.self, forKey: .location)
+        savedAt = try container.decode(Date.self, forKey: .savedAt)
+        // Defaults to false so routes saved before this field existed still decode.
+        startNavigationByDefault = try container.decodeIfPresent(Bool.self, forKey: .startNavigationByDefault) ?? false
+    }
 }
 
 extension ParsedLocation {
