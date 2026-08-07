@@ -4,6 +4,7 @@ protocol RouteStoring {
     func loadAll() -> [SavedRoute]
     func save(_ route: SavedRoute)
     func delete(id: UUID)
+    func importRoutes(_ routes: [SavedRoute])
 }
 
 final class JSONRouteStore: RouteStoring {
@@ -32,6 +33,17 @@ final class JSONRouteStore: RouteStoring {
     func delete(id: UUID) {
         var routes = loadAll()
         routes.removeAll { $0.id == id }
+        persist(routes)
+    }
+
+    // Imported routes overwrite any existing entry with the same id (re-importing the
+    // same backup is idempotent); anything else is merged in alongside what's already saved.
+    func importRoutes(_ imported: [SavedRoute]) {
+        var routes = loadAll()
+        for route in imported {
+            routes.removeAll { $0.id == route.id }
+            routes.append(route)
+        }
         persist(routes)
     }
 

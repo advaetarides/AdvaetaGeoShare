@@ -64,4 +64,30 @@ final class RouteStoreTests: XCTestCase {
         let store = JSONRouteStore(fileURL: tempFileURL)
         XCTAssertEqual(store.loadAll(), [])
     }
+
+    func testImportRoutesMergesWithExistingRoutes() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        let existing = SavedRoute(id: UUID(), name: "Existing", location: .point(StoredCoordinate(latitude: 1, longitude: 1)), savedAt: Date())
+        store.save(existing)
+        let imported = SavedRoute(id: UUID(), name: "Imported", location: .point(StoredCoordinate(latitude: 2, longitude: 2)), savedAt: Date())
+
+        store.importRoutes([imported])
+
+        let names = Set(store.loadAll().map(\.name))
+        XCTAssertEqual(names, ["Existing", "Imported"])
+    }
+
+    func testImportRoutesOverwritesExistingEntryWithSameId() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        let id = UUID()
+        let original = SavedRoute(id: id, name: "Original Name", location: .point(StoredCoordinate(latitude: 1, longitude: 1)), savedAt: Date())
+        store.save(original)
+        let updated = SavedRoute(id: id, name: "Updated Name", location: .point(StoredCoordinate(latitude: 1, longitude: 1)), savedAt: Date())
+
+        store.importRoutes([updated])
+
+        let loaded = store.loadAll()
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertEqual(loaded.first?.name, "Updated Name")
+    }
 }

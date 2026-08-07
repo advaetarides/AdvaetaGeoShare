@@ -15,4 +15,11 @@ final class MockRouteStore: RouteStoring {
     func delete(id: UUID) {
         routes.removeAll { $0.id == id }
     }
+
+    func importRoutes(_ imported: [SavedRoute]) {
+        for route in imported {
+            routes.removeAll { $0.id == route.id }
+            routes.append(route)
+        }
+    }
 }
