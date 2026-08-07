@@ -26,8 +26,8 @@ struct RoutesListView: View {
                         Button {
                             Task {
                                 let result = await viewModel.open(route)
-                                if result == .osmAndNotInstalled {
-                                    openError = "OsmAnd isn't installed. Install it from the App Store to continue."
+                                if result == .notAvailable {
+                                    openError = "\(route.preferredApp.displayName) isn't installed. Install it from the App Store to continue."
                                 }
                             }
                         } label: {
@@ -35,12 +35,10 @@ struct RoutesListView: View {
                                 Text(route.name)
                                     .font(.heading(16))
                                     .foregroundStyle(Color.textCream)
-                                if let subtitle = subtitle(for: route) {
-                                    Text(subtitle)
-                                        .font(.caption(15))
-                                        .italic()
-                                        .foregroundStyle(Color.textMuted)
-                                }
+                                Text(subtitle(for: route))
+                                    .font(.caption(15))
+                                    .italic()
+                                    .foregroundStyle(Color.textMuted)
                             }
                             .padding(.vertical, 6)
                         }
@@ -68,13 +66,14 @@ struct RoutesListView: View {
         .preferredColorScheme(.dark)
     }
 
-    private func subtitle(for route: SavedRoute) -> String? {
-        switch route.location {
-        case .point:
-            return route.startNavigationByDefault ? "Auto-navigate" : nil
-        case .route(let stops):
-            let base = "\(stops.count)-stop route"
-            return route.startNavigationByDefault ? "\(base) · Auto-navigate" : base
+    private func subtitle(for route: SavedRoute) -> String {
+        var parts: [String] = [route.preferredApp.displayName]
+        if case .route(let stops) = route.location {
+            parts.append("\(stops.count)-stop route")
         }
+        if route.startNavigationByDefault {
+            parts.append("Auto-navigate")
+        }
+        return parts.joined(separator: " · ")
     }
 }

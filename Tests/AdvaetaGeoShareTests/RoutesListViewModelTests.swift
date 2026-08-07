@@ -2,13 +2,15 @@ import XCTest
 import CoreLocation
 @testable import AdvaetaGeoShare
 
-private final class MockLauncher: OsmAndOpening {
+private final class MockLauncher: MapAppOpening {
     var result: LaunchResult = .opened
     var openedLocation: ParsedLocation?
+    var openedApp: MapApp?
     var openedStartNavigation: Bool?
 
-    func open(_ location: ParsedLocation, startNavigation: Bool) async -> LaunchResult {
+    func open(_ location: ParsedLocation, in app: MapApp, startNavigation: Bool) async -> LaunchResult {
         openedLocation = location
+        openedApp = app
         openedStartNavigation = startNavigation
         return result
     }
@@ -105,5 +107,22 @@ final class RoutesListViewModelTests: XCTestCase {
         _ = await viewModel.open(route)
 
         XCTAssertEqual(launcher.openedStartNavigation, true)
+    }
+
+    func testOpenPassesTheRoutesPreferredAppToTheLauncher() async {
+        let store = MockRouteStore()
+        let launcher = MockLauncher()
+        let route = SavedRoute(
+            id: UUID(),
+            name: "Home",
+            location: .point(StoredCoordinate(latitude: 1, longitude: 2)),
+            savedAt: Date(),
+            preferredApp: .waze
+        )
+        let viewModel = RoutesListViewModel(routeStore: store, launcher: launcher, filter: .points)
+
+        _ = await viewModel.open(route)
+
+        XCTAssertEqual(launcher.openedApp, .waze)
     }
 }

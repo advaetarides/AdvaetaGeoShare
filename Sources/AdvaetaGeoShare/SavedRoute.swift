@@ -17,17 +17,26 @@ struct SavedRoute: Identifiable, Codable, Equatable {
     let location: StoredLocation
     let savedAt: Date
     var startNavigationByDefault: Bool
+    var preferredApp: MapApp
 
-    init(id: UUID, name: String, location: StoredLocation, savedAt: Date, startNavigationByDefault: Bool = false) {
+    init(
+        id: UUID,
+        name: String,
+        location: StoredLocation,
+        savedAt: Date,
+        startNavigationByDefault: Bool = false,
+        preferredApp: MapApp = .osmAnd
+    ) {
         self.id = id
         self.name = name
         self.location = location
         self.savedAt = savedAt
         self.startNavigationByDefault = startNavigationByDefault
+        self.preferredApp = preferredApp
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, location, savedAt, startNavigationByDefault
+        case id, name, location, savedAt, startNavigationByDefault, preferredApp
     }
 
     init(from decoder: Decoder) throws {
@@ -36,8 +45,9 @@ struct SavedRoute: Identifiable, Codable, Equatable {
         name = try container.decode(String.self, forKey: .name)
         location = try container.decode(StoredLocation.self, forKey: .location)
         savedAt = try container.decode(Date.self, forKey: .savedAt)
-        // Defaults to false so routes saved before this field existed still decode.
+        // Both default so routes saved before these fields existed still decode.
         startNavigationByDefault = try container.decodeIfPresent(Bool.self, forKey: .startNavigationByDefault) ?? false
+        preferredApp = try container.decodeIfPresent(MapApp.self, forKey: .preferredApp) ?? .osmAnd
     }
 }
 

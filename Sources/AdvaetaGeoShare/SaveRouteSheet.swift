@@ -2,12 +2,13 @@ import SwiftUI
 
 struct SaveRouteSheet: View {
     let stopCount: Int?
-    let onSave: (String, Bool, Bool) -> Void
+    let onSave: (String, Bool, Bool, MapApp) -> Void
     let onCancel: () -> Void
 
     @State private var name: String = ""
     @State private var startNavigationByDefault: Bool = false
     @State private var saveDestinationOnly: Bool = false
+    @State private var preferredApp: MapApp = .osmAnd
 
     private var isMultiStopRoute: Bool { stopCount != nil }
     private var showsStartNavigationToggle: Bool { !isMultiStopRoute || saveDestinationOnly }
@@ -26,6 +27,14 @@ struct SaveRouteSheet: View {
 
                     TextField(isMultiStopRoute ? "Route name" : "Place name", text: $name)
                         .goldFieldStyle()
+
+                    Picker("Open with", selection: $preferredApp) {
+                        ForEach(MapApp.allCases) { app in
+                            Text(app.displayName).tag(app)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Color.bronze)
 
                     if let stopCount {
                         Toggle(isOn: $saveDestinationOnly) {
@@ -57,7 +66,7 @@ struct SaveRouteSheet: View {
                         .foregroundStyle(Color.textMuted)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { onSave(name, startNavigationByDefault, saveDestinationOnly) }
+                    Button("Save") { onSave(name, startNavigationByDefault, saveDestinationOnly, preferredApp) }
                         .font(.heading(13))
                         .tracking(1)
                         .foregroundStyle(Color.bronze)

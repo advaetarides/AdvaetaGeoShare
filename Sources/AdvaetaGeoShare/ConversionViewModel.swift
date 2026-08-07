@@ -14,7 +14,7 @@ final class ConversionViewModel: ObservableObject {
 
     private let parser: LinkParsing
     private let geocoder: AddressGeocoding
-    private let launcher: OsmAndOpening
+    private let launcher: MapAppOpening
     private let routeStore: RouteStoring
     private let recentSearchStore: RecentSearchStoring
     private var pendingSaveLocation: ParsedLocation?
@@ -33,7 +33,7 @@ final class ConversionViewModel: ObservableObject {
     init(
         parser: LinkParsing,
         geocoder: AddressGeocoding,
-        launcher: OsmAndOpening,
+        launcher: MapAppOpening,
         routeStore: RouteStoring,
         recentSearchStore: RecentSearchStoring
     ) {
@@ -45,16 +45,16 @@ final class ConversionViewModel: ObservableObject {
         self.recentSearches = recentSearchStore.loadAll()
     }
 
-    func convert() async {
+    func convert(in app: MapApp) async {
         state = .resolving
         switch await resolveLocation() {
         case .success(let location):
-            switch await launcher.open(location, startNavigation: false) {
+            switch await launcher.open(location, in: app, startNavigation: false) {
             case .opened:
-                recordRecentSearch(label: inputText, location: location)
+                recordRecentSearch(label: inputText, location: location, app: app)
                 state = .idle
-            case .osmAndNotInstalled:
-                state = .error("OsmAnd isn't installed. Install it from the App Store to continue.")
+            case .notAvailable:
+                state = .error("\(app.displayName) isn't installed. Install it from the App Store to continue.")
             }
         case .failure(let failure):
             state = .error(failure.message)
@@ -63,11 +63,11 @@ final class ConversionViewModel: ObservableObject {
 
     func openRecentSearch(_ search: RecentSearch) async {
         state = .resolving
-        switch await launcher.open(search.location.parsed, startNavigation: false) {
+        switch await launcher.open(search.location.parsed, in: search.app, startNavigation: false) {
         case .opened:
             state = .idle
-        case .osmAndNotInstalled:
-            state = .error("OsmAnd isn't installed. Install it from the App Store to continue.")
+        case .notAvailable:
+            state = .error("\(search.app.displayName) isn't installed. Install it from the App Store to continue.")
         }
     }
 
@@ -82,7 +82,7 @@ final class ConversionViewModel: ObservableObject {
         }
     }
 
-    func confirmSave(name: String, startNavigationByDefault: Bool, saveDestinationOnly: Bool) {
+    func confirmSave(name: String, startNavigationByDefault: Bool, saveDestinationOnly: Bool, preferredApp: MapApp) {
         guard let location = pendingSaveLocation else { return }
         let effectiveLocation: ParsedLocation
         if saveDestinationOnly, case .route(let stops) = location, let destination = stops.last {
@@ -97,7 +97,8 @@ final class ConversionViewModel: ObservableObject {
             name: trimmedName.isEmpty ? "Untitled Route" : trimmedName,
             location: effectiveLocation.stored,
             savedAt: Date(),
-            startNavigationByDefault: startNavigationByDefault
+            startNavigationByDefault: startNavigationByDefault,
+            preferredApp: preferredApp
         )
         routeStore.save(route)
         pendingSaveLocation = nil
@@ -109,13 +110,14 @@ final class ConversionViewModel: ObservableObject {
         state = .idle
     }
 
-    private func recordRecentSearch(label: String, location: ParsedLocation) {
+    private func recordRecentSearch(label: String, location: ParsedLocation, app: MapApp) {
         let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
         let search = RecentSearch(
             id: UUID(),
             label: String(trimmedLabel.prefix(60)),
             location: location.stored,
-            openedAt: Date()
+            openedAt: Date(),
+            app: app
         )
         recentSearchStore.record(search)
         recentSearches = recentSearchStore.loadAll()

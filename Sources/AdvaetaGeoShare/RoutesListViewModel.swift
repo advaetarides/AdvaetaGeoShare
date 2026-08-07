@@ -20,10 +20,10 @@ final class RoutesListViewModel: ObservableObject {
     @Published private(set) var routes: [SavedRoute] = []
 
     private let routeStore: RouteStoring
-    private let launcher: OsmAndOpening
+    private let launcher: MapAppOpening
     private let filter: SavedRouteFilter
 
-    init(routeStore: RouteStoring, launcher: OsmAndOpening, filter: SavedRouteFilter) {
+    init(routeStore: RouteStoring, launcher: MapAppOpening, filter: SavedRouteFilter) {
         self.routeStore = routeStore
         self.launcher = launcher
         self.filter = filter
@@ -39,6 +39,6 @@ final class RoutesListViewModel: ObservableObject {
     }
 
     func open(_ route: SavedRoute) async -> LaunchResult {
-        await launcher.open(route.location.parsed, startNavigation: route.startNavigationByDefault)
+        await launcher.open(route.location.parsed, in: route.preferredApp, startNavigation: route.startNavigationByDefault)
     }
 }

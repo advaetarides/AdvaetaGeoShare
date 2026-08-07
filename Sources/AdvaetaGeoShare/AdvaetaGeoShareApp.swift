@@ -11,12 +11,12 @@ struct AdvaetaGeoShareApp: App {
                 viewModel: ConversionViewModel(
                     parser: GoogleMapsLinkParser(),
                     geocoder: CLGeocoderAddressGeocoder(),
-                    launcher: OsmAndLauncher(urlOpener: UIApplication.shared),
+                    launcher: MapAppLauncher(urlOpener: UIApplication.shared),
                     routeStore: routeStore,
                     recentSearchStore: recentSearchStore
                 ),
                 routeStore: routeStore,
-                launcher: OsmAndLauncher(urlOpener: UIApplication.shared)
+                launcher: MapAppLauncher(urlOpener: UIApplication.shared)
             )
         }
     }

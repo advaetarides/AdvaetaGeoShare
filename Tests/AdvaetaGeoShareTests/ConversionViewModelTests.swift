@@ -16,9 +16,9 @@ private struct MockGeocoder: AddressGeocoding {
     }
 }
 
-private struct MockLauncher: OsmAndOpening {
+private struct MockLauncher: MapAppOpening {
     let result: LaunchResult
-    func open(_ location: ParsedLocation, startNavigation: Bool) async -> LaunchResult {
+    func open(_ location: ParsedLocation, in app: MapApp, startNavigation: Bool) async -> LaunchResult {
         result
     }
 }
@@ -28,7 +28,7 @@ final class ConversionViewModelTests: XCTestCase {
     private func makeViewModel(
         parser: LinkParsing,
         geocoder: AddressGeocoding = MockGeocoder(result: .failure(.notFound)),
-        launcher: OsmAndOpening,
+        launcher: MapAppOpening,
         routeStore: RouteStoring = MockRouteStore(),
         recentSearchStore: RecentSearchStoring = MockRecentSearchStore()
     ) -> ConversionViewModel {
@@ -48,7 +48,7 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .idle)
     }
@@ -63,7 +63,7 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "https://www.google.com/maps/dir/A/B/data=..."
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .idle)
     }
@@ -76,7 +76,7 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "SW1A 1AA"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .idle)
     }
@@ -89,7 +89,7 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "gibberish"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .error("Couldn't find that as a map link or an address."))
     }
@@ -101,7 +101,7 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "https://www.google.com/maps/search/coffee"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .error("Couldn't find a location in that link."))
     }
@@ -113,21 +113,21 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "https://maps.app.goo.gl/abc"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertEqual(viewModel.state, .error("Couldn't resolve that link. Check your connection and try again."))
     }
 
-    func testOsmAndNotInstalledShowsError() async {
+    func testAppNotAvailableShowsErrorNamingThatApp() async {
         let viewModel = makeViewModel(
             parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
-            launcher: MockLauncher(result: .osmAndNotInstalled)
+            launcher: MockLauncher(result: .notAvailable)
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .waze)
 
-        XCTAssertEqual(viewModel.state, .error("OsmAnd isn't installed. Install it from the App Store to continue."))
+        XCTAssertEqual(viewModel.state, .error("Waze isn't installed. Install it from the App Store to continue."))
     }
 
     func testSaveRouteTappedPromptsForNameOnSuccessfulParse() async {
@@ -182,7 +182,7 @@ final class ConversionViewModelTests: XCTestCase {
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
         await viewModel.saveRouteTapped()
 
-        viewModel.confirmSave(name: "My Route", startNavigationByDefault: true, saveDestinationOnly: false)
+        viewModel.confirmSave(name: "My Route", startNavigationByDefault: true, saveDestinationOnly: false, preferredApp: .googleMaps)
 
         XCTAssertEqual(viewModel.state, .idle)
         let saved = store.loadAll()
@@ -190,6 +190,7 @@ final class ConversionViewModelTests: XCTestCase {
         XCTAssertEqual(saved.first?.name, "My Route")
         XCTAssertEqual(saved.first?.location, .point(StoredCoordinate(latitude: 1, longitude: 2)))
         XCTAssertEqual(saved.first?.startNavigationByDefault, true)
+        XCTAssertEqual(saved.first?.preferredApp, .googleMaps)
     }
 
     func testConfirmSaveWithBlankNameUsesUntitledRoute() async {
@@ -202,7 +203,7 @@ final class ConversionViewModelTests: XCTestCase {
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
         await viewModel.saveRouteTapped()
 
-        viewModel.confirmSave(name: "   ", startNavigationByDefault: false, saveDestinationOnly: false)
+        viewModel.confirmSave(name: "   ", startNavigationByDefault: false, saveDestinationOnly: false, preferredApp: .osmAnd)
 
         XCTAssertEqual(store.loadAll().first?.name, "Untitled Route")
     }
@@ -221,7 +222,7 @@ final class ConversionViewModelTests: XCTestCase {
         viewModel.inputText = "https://www.google.com/maps/dir/A/B/C/data=..."
         await viewModel.saveRouteTapped()
 
-        viewModel.confirmSave(name: "Just the destination", startNavigationByDefault: true, saveDestinationOnly: true)
+        viewModel.confirmSave(name: "Just the destination", startNavigationByDefault: true, saveDestinationOnly: true, preferredApp: .osmAnd)
 
         let saved = store.loadAll()
         XCTAssertEqual(saved.count, 1)
@@ -254,10 +255,11 @@ final class ConversionViewModelTests: XCTestCase {
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .googleMaps)
 
         XCTAssertEqual(viewModel.recentSearches.count, 1)
         XCTAssertEqual(viewModel.recentSearches.first?.label, "https://www.google.com/maps/@1,2,15z")
+        XCTAssertEqual(viewModel.recentSearches.first?.app, .googleMaps)
         XCTAssertEqual(recentSearchStore.loadAll().count, 1)
     }
 
@@ -265,23 +267,24 @@ final class ConversionViewModelTests: XCTestCase {
         let recentSearchStore = MockRecentSearchStore()
         let viewModel = makeViewModel(
             parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
-            launcher: MockLauncher(result: .osmAndNotInstalled),
+            launcher: MockLauncher(result: .notAvailable),
             recentSearchStore: recentSearchStore
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
 
-        await viewModel.convert()
+        await viewModel.convert(in: .osmAnd)
 
         XCTAssertTrue(viewModel.recentSearches.isEmpty)
     }
 
-    func testOpenRecentSearchOpensTheStoredLocation() async {
+    func testOpenRecentSearchOpensTheStoredLocationWithItsOwnApp() async {
         let recentSearchStore = MockRecentSearchStore()
         let search = RecentSearch(
             id: UUID(),
             label: "Somewhere",
             location: .point(StoredCoordinate(latitude: 5, longitude: 6)),
-            openedAt: Date()
+            openedAt: Date(),
+            app: .waze
         )
         recentSearchStore.record(search)
         let viewModel = makeViewModel(

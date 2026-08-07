@@ -6,9 +6,9 @@ struct ContentView: View {
     @StateObject private var autocompleter = AddressAutocompleter()
     @FocusState private var fieldIsFocused: Bool
     private let routeStore: RouteStoring
-    private let launcher: OsmAndOpening
+    private let launcher: MapAppOpening
 
-    init(viewModel: ConversionViewModel, routeStore: RouteStoring, launcher: OsmAndOpening) {
+    init(viewModel: ConversionViewModel, routeStore: RouteStoring, launcher: MapAppOpening) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.routeStore = routeStore
         self.launcher = launcher
@@ -18,10 +18,6 @@ struct ContentView: View {
         NavigationStack {
             ZStack {
                 Color.backgroundBlack.ignoresSafeArea()
-                    .onTapGesture {
-                        fieldIsFocused = false
-                        autocompleter.clear()
-                    }
 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -109,10 +105,16 @@ struct ContentView: View {
                         }
 
                         HStack(spacing: 12) {
-                            Button("Open in OsmAnd") {
-                                Task {
-                                    await viewModel.convert()
+                            Menu {
+                                ForEach(MapApp.allCases) { app in
+                                    Button(app.displayName) {
+                                        Task {
+                                            await viewModel.convert(in: app)
+                                        }
+                                    }
                                 }
+                            } label: {
+                                Text("Open In")
                             }
                             .buttonStyle(GoldOutlineButtonStyle())
                             .disabled(isInputEmpty || viewModel.state == .resolving)
@@ -154,20 +156,33 @@ struct ContentView: View {
                                 VStack(spacing: 0) {
                                     let recents = viewModel.recentSearches
                                     ForEach(Array(recents.enumerated()), id: \.element.id) { index, search in
-                                        Button {
-                                            Task {
-                                                await viewModel.openRecentSearch(search)
+                                        HStack(spacing: 8) {
+                                            Button {
+                                                Task {
+                                                    await viewModel.openRecentSearch(search)
+                                                }
+                                            } label: {
+                                                Text(search.label)
+                                                    .font(.caption(13))
+                                                    .foregroundStyle(Color.textCream)
+                                                    .lineLimit(1)
+                                                    .truncationMode(.tail)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
                                             }
-                                        } label: {
-                                            Text(search.label)
-                                                .font(.body(16))
-                                                .foregroundStyle(Color.textCream)
-                                                .lineLimit(1)
-                                                .frame(maxWidth: .infinity, alignment: .leading)
-                                                .padding(10)
+                                            .buttonStyle(.plain)
+                                            .disabled(viewModel.state == .resolving)
+
+                                            Button {
+                                                UIPasteboard.general.string = search.label
+                                            } label: {
+                                                Image(systemName: "doc.on.doc")
+                                                    .font(.system(size: 12))
+                                                    .foregroundStyle(Color.textMuted)
+                                            }
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
-                                        .disabled(viewModel.state == .resolving)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 7)
 
                                         if index != recents.count - 1 {
                                             Rectangle()
@@ -187,6 +202,11 @@ struct ContentView: View {
                     .padding(.bottom, 40)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    fieldIsFocused = false
+                    autocompleter.clear()
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -208,11 +228,12 @@ struct ContentView: View {
             ) {
                 SaveRouteSheet(
                     stopCount: viewModel.pendingLocationStopCount,
-                    onSave: { name, startNavigationByDefault, saveDestinationOnly in
+                    onSave: { name, startNavigationByDefault, saveDestinationOnly, preferredApp in
                         viewModel.confirmSave(
                             name: name,
                             startNavigationByDefault: startNavigationByDefault,
-                            saveDestinationOnly: saveDestinationOnly
+                            saveDestinationOnly: saveDestinationOnly,
+                            preferredApp: preferredApp
                         )
                     },
                     onCancel: {

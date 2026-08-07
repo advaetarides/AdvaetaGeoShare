@@ -6,6 +6,29 @@ struct RecentSearch: Identifiable, Codable, Equatable {
     let label: String
     let location: StoredLocation
     let openedAt: Date
+    let app: MapApp
+
+    init(id: UUID, label: String, location: StoredLocation, openedAt: Date, app: MapApp = .osmAnd) {
+        self.id = id
+        self.label = label
+        self.location = location
+        self.openedAt = openedAt
+        self.app = app
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, label, location, openedAt, app
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        label = try container.decode(String.self, forKey: .label)
+        location = try container.decode(StoredLocation.self, forKey: .location)
+        openedAt = try container.decode(Date.self, forKey: .openedAt)
+        // Defaults so recents recorded before this field existed still decode.
+        app = try container.decodeIfPresent(MapApp.self, forKey: .app) ?? .osmAnd
+    }
 }
 
 protocol RecentSearchStoring {

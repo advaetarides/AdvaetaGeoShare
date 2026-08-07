@@ -3,7 +3,7 @@ import UniformTypeIdentifiers
 
 struct MenuView: View {
     let routeStore: RouteStoring
-    let launcher: OsmAndOpening
+    let launcher: MapAppOpening
 
     @State private var exportURL: URL?
     @State private var showImporter = false
