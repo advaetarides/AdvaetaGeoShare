@@ -1,11 +1,11 @@
 import SwiftUI
 
 struct RoutesListView: View {
-    @State private var viewModel: RoutesListViewModel
+    @StateObject private var viewModel: RoutesListViewModel
     @State private var openError: String?
 
     init(viewModel: RoutesListViewModel) {
-        self.viewModel = viewModel
+        _viewModel = StateObject(wrappedValue: viewModel)
     }
 
     var body: some View {

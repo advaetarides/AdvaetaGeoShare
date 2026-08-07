@@ -1,9 +1,7 @@
 import Foundation
-import Observation
 
-@Observable
-final class RoutesListViewModel {
-    private(set) var routes: [SavedRoute] = []
+final class RoutesListViewModel: ObservableObject {
+    @Published private(set) var routes: [SavedRoute] = []
 
     private let routeStore: RouteStoring
     private let launcher: OsmAndOpening

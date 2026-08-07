@@ -1,8 +1,6 @@
 import Foundation
-import Observation
 
-@Observable
-final class ConversionViewModel {
+final class ConversionViewModel: ObservableObject {
     enum State: Equatable {
         case idle
         case resolving
@@ -10,8 +8,8 @@ final class ConversionViewModel {
         case promptingForRouteName
     }
 
-    private(set) var state: State = .idle
-    var inputText: String = ""
+    @Published private(set) var state: State = .idle
+    @Published var inputText: String = ""
 
     private let parser: LinkParsing
     private let geocoder: AddressGeocoding
