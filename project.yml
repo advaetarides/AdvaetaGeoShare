@@ -17,6 +17,8 @@ targets:
       properties:
         CFBundleDisplayName: AdvaetaGeoShare
         UILaunchScreen: {}
+        LSApplicationQueriesSchemes:
+          - osmandmaps
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.advaetarides.AdvaetaGeoShare
