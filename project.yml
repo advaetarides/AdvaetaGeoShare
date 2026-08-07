@@ -16,11 +16,10 @@ targets:
       path: Sources/AdvaetaGeoShare/Info.plist
       properties:
         CFBundleDisplayName: AdvaetaGeoShare
-        CFBundleVersion: "2"
+        CFBundleVersion: "3"
         UILaunchScreen: {}
         LSApplicationQueriesSchemes:
           - osmandmaps
-          - geo-navigation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.advaetarides.AdvaetaGeoShare

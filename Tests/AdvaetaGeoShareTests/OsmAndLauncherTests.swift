@@ -64,12 +64,13 @@ final class OsmAndLauncherTests: XCTestCase {
 
         XCTAssertEqual(result, .opened)
         let openedURL = try XCTUnwrap(opener.openedURL)
-        XCTAssertEqual(openedURL.scheme, "geo-navigation")
-        XCTAssertEqual(openedURL.path, "/directions")
+        XCTAssertEqual(openedURL.scheme, "https")
+        XCTAssertEqual(openedURL.host, "osmand.net")
+        XCTAssertEqual(openedURL.path, "/map")
         let query = try XCTUnwrap(openedURL.query)
-        XCTAssertTrue(query.contains("source=53.4329149,-1.868913"))
-        XCTAssertTrue(query.contains("destination=53.3414465,-1.8008441"))
-        XCTAssertTrue(query.contains("waypoint=53.2767083,-1.7293244"))
+        XCTAssertTrue(query.contains("start=53.4329149,-1.868913"))
+        XCTAssertTrue(query.contains("end=53.3414465,-1.8008441"))
+        XCTAssertTrue(query.contains("via=53.2767083,-1.7293244"))
     }
 
     func testReturnsNotInstalledWhenOsmAndCannotOpenURL() async {
@@ -86,9 +87,11 @@ final class OsmAndLauncherTests: XCTestCase {
     // Regression guard: canOpenURL silently returns false for any scheme not declared here,
     // which reads identically to "OsmAnd isn't installed" even when it is. This caught a real
     // bug where "geo-navigation" was added to OsmAndLauncher but never added to Info.plist.
-    func testAppDeclaresBothSchemesOsmAndLauncherUses() {
+    // Routes now use an https:// Universal Link instead (no scheme declaration needed) after
+    // discovering geo-navigation isn't registered by shipped OsmAnd versions (confirmed on a
+    // real device via OSStatus -10814, kLSApplicationNotFoundErr, on OsmAnd 5.3.3).
+    func testAppDeclaresTheSchemeOsmAndLauncherUses() {
         let schemes = Bundle.main.object(forInfoDictionaryKey: "LSApplicationQueriesSchemes") as? [String] ?? []
         XCTAssertTrue(schemes.contains("osmandmaps"), "osmandmaps must be declared in LSApplicationQueriesSchemes")
-        XCTAssertTrue(schemes.contains("geo-navigation"), "geo-navigation must be declared in LSApplicationQueriesSchemes")
     }
 }

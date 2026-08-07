@@ -77,18 +77,26 @@ struct OsmAndLauncher: OsmAndOpening {
     }
 
     private static func routeURL(for stops: [CLLocationCoordinate2D]) -> URL? {
+        // The geo-navigation:// scheme (checked via a real device: OSStatus -10814,
+        // kLSApplicationNotFoundErr) isn't registered by shipped OsmAnd versions yet
+        // (confirmed against 5.3.3). osmand.net/map is an older, established Universal
+        // Link OsmAnd's app already handles for multi-point routes, and being https it
+        // never hard-fails canOpenURL the way an unregistered custom scheme does.
         guard stops.count >= 2, let source = stops.first, let destination = stops.last else { return nil }
         let waypoints = stops.dropFirst().dropLast()
 
         var components = URLComponents()
-        components.scheme = "geo-navigation"
-        components.host = ""
-        components.path = "/directions"
+        components.scheme = "https"
+        components.host = "osmand.net"
+        components.path = "/map"
         var queryItems = [
-            URLQueryItem(name: "source", value: Self.commaFormat(source)),
-            URLQueryItem(name: "destination", value: Self.commaFormat(destination)),
+            URLQueryItem(name: "start", value: Self.commaFormat(source)),
+            URLQueryItem(name: "end", value: Self.commaFormat(destination)),
         ]
-        queryItems.append(contentsOf: waypoints.map { URLQueryItem(name: "waypoint", value: Self.commaFormat($0)) })
+        if !waypoints.isEmpty {
+            let viaValue = waypoints.map { Self.commaFormat($0) }.joined(separator: ";")
+            queryItems.append(URLQueryItem(name: "via", value: viaValue))
+        }
         components.queryItems = queryItems
         return components.url
     }
