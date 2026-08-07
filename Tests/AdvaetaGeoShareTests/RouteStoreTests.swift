@@ -1,0 +1,67 @@
+import XCTest
+@testable import AdvaetaGeoShare
+
+final class RouteStoreTests: XCTestCase {
+    private var tempFileURL: URL!
+
+    override func setUp() {
+        super.setUp()
+        tempFileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_routes_\(UUID().uuidString).json")
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: tempFileURL)
+        super.tearDown()
+    }
+
+    func testSaveAndLoadRoundTripsAPoint() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        let route = SavedRoute(
+            id: UUID(),
+            name: "Home",
+            location: .point(StoredCoordinate(latitude: 1.5, longitude: 2.5)),
+            savedAt: Date(timeIntervalSince1970: 1000)
+        )
+
+        store.save(route)
+        let loaded = store.loadAll()
+
+        XCTAssertEqual(loaded, [route])
+    }
+
+    func testSaveAndLoadRoundTripsARoute() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        let route = SavedRoute(
+            id: UUID(),
+            name: "Peak District Tour",
+            location: .route(stops: [
+                StoredCoordinate(latitude: 1, longitude: 2),
+                StoredCoordinate(latitude: 3, longitude: 4),
+            ]),
+            savedAt: Date(timeIntervalSince1970: 2000)
+        )
+
+        store.save(route)
+        let loaded = store.loadAll()
+
+        XCTAssertEqual(loaded, [route])
+    }
+
+    func testDeleteRemovesOnlyTheMatchingRoute() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        let keep = SavedRoute(id: UUID(), name: "Keep", location: .point(StoredCoordinate(latitude: 1, longitude: 1)), savedAt: Date())
+        let remove = SavedRoute(id: UUID(), name: "Remove", location: .point(StoredCoordinate(latitude: 2, longitude: 2)), savedAt: Date())
+        store.save(keep)
+        store.save(remove)
+
+        store.delete(id: remove.id)
+
+        XCTAssertEqual(store.loadAll(), [keep])
+    }
+
+    func testLoadAllReturnsEmptyWhenNoFileExists() {
+        let store = JSONRouteStore(fileURL: tempFileURL)
+        XCTAssertEqual(store.loadAll(), [])
+    }
+}
