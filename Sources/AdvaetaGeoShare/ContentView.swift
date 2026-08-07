@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @State private var viewModel: ConversionViewModel
@@ -21,6 +22,27 @@ struct ContentView: View {
                 TextField("Paste a Google Maps link or type an address/postcode", text: $viewModel.inputText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal)
+
+                HStack(spacing: 12) {
+                    Button {
+                        if let clipboardText = UIPasteboard.general.string {
+                            viewModel.inputText = clipboardText
+                        }
+                    } label: {
+                        Label("Paste", systemImage: "doc.on.clipboard")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button {
+                        viewModel.inputText = ""
+                    } label: {
+                        Label("Clear", systemImage: "xmark.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(isInputEmpty)
+                }
 
                 HStack(spacing: 12) {
                     Button("Open in OsmAnd") {
