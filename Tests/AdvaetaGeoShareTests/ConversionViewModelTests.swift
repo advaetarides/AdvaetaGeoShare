@@ -3,15 +3,15 @@ import CoreLocation
 @testable import AdvaetaGeoShare
 
 private struct MockParser: LinkParsing {
-    let result: Result<CLLocationCoordinate2D, ParseError>
-    func parse(_ input: String) async -> Result<CLLocationCoordinate2D, ParseError> {
+    let result: Result<ParsedLocation, ParseError>
+    func parse(_ input: String) async -> Result<ParsedLocation, ParseError> {
         result
     }
 }
 
 private struct MockLauncher: OsmAndOpening {
     let result: LaunchResult
-    func open(coordinate: CLLocationCoordinate2D) async -> LaunchResult {
+    func open(_ location: ParsedLocation) async -> LaunchResult {
         result
     }
 }
@@ -20,10 +20,25 @@ final class ConversionViewModelTests: XCTestCase {
 
     func testSuccessfulConversionEndsInIdleState() async {
         let viewModel = ConversionViewModel(
-            parser: MockParser(result: .success(CLLocationCoordinate2D(latitude: 1, longitude: 2))),
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
             launcher: MockLauncher(result: .opened)
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+
+        await viewModel.convert()
+
+        XCTAssertEqual(viewModel.state, .idle)
+    }
+
+    func testSuccessfulRouteConversionEndsInIdleState() async {
+        let viewModel = ConversionViewModel(
+            parser: MockParser(result: .success(.route(stops: [
+                CLLocationCoordinate2D(latitude: 1, longitude: 2),
+                CLLocationCoordinate2D(latitude: 3, longitude: 4),
+            ]))),
+            launcher: MockLauncher(result: .opened)
+        )
+        viewModel.inputText = "https://www.google.com/maps/dir/A/B/data=..."
 
         await viewModel.convert()
 
@@ -68,7 +83,7 @@ final class ConversionViewModelTests: XCTestCase {
 
     func testOsmAndNotInstalledShowsError() async {
         let viewModel = ConversionViewModel(
-            parser: MockParser(result: .success(CLLocationCoordinate2D(latitude: 1, longitude: 2))),
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
             launcher: MockLauncher(result: .osmAndNotInstalled)
         )
         viewModel.inputText = "https://www.google.com/maps/@1,2,15z"

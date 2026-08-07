@@ -23,8 +23,8 @@ final class ConversionViewModel {
     func convert() async {
         state = .resolving
         switch await parser.parse(inputText) {
-        case .success(let coordinate):
-            switch await launcher.open(coordinate: coordinate) {
+        case .success(let location):
+            switch await launcher.open(location) {
             case .opened:
                 state = .idle
             case .osmAndNotInstalled:

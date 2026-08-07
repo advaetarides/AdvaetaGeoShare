@@ -23,7 +23,7 @@ extension UIApplication: URLOpening {
 }
 
 protocol OsmAndOpening {
-    func open(coordinate: CLLocationCoordinate2D) async -> LaunchResult
+    func open(_ location: ParsedLocation) async -> LaunchResult
 }
 
 struct OsmAndLauncher: OsmAndOpening {
@@ -33,7 +33,23 @@ struct OsmAndLauncher: OsmAndOpening {
         self.urlOpener = urlOpener
     }
 
-    func open(coordinate: CLLocationCoordinate2D) async -> LaunchResult {
+    func open(_ location: ParsedLocation) async -> LaunchResult {
+        let url: URL?
+        switch location {
+        case .point(let coordinate):
+            url = Self.pointURL(for: coordinate)
+        case .route(let stops):
+            url = Self.routeURL(for: stops)
+        }
+
+        guard let url, urlOpener.canOpen(url) else {
+            return .osmAndNotInstalled
+        }
+        _ = await urlOpener.open(url)
+        return .opened
+    }
+
+    private static func pointURL(for coordinate: CLLocationCoordinate2D) -> URL? {
         var components = URLComponents()
         components.scheme = "osmandmaps"
         components.host = ""  // forces "osmandmaps://" (empty authority) to match OsmAnd's documented URL format
@@ -42,11 +58,27 @@ struct OsmAndLauncher: OsmAndOpening {
             URLQueryItem(name: "lon", value: String(coordinate.longitude)),
             URLQueryItem(name: "z", value: "15"),
         ]
+        return components.url
+    }
 
-        guard let url = components.url, urlOpener.canOpen(url) else {
-            return .osmAndNotInstalled
-        }
-        _ = await urlOpener.open(url)
-        return .opened
+    private static func routeURL(for stops: [CLLocationCoordinate2D]) -> URL? {
+        guard stops.count >= 2, let source = stops.first, let destination = stops.last else { return nil }
+        let waypoints = stops.dropFirst().dropLast()
+
+        var components = URLComponents()
+        components.scheme = "geo-navigation"
+        components.host = ""
+        components.path = "/directions"
+        var queryItems = [
+            URLQueryItem(name: "source", value: Self.commaFormat(source)),
+            URLQueryItem(name: "destination", value: Self.commaFormat(destination)),
+        ]
+        queryItems.append(contentsOf: waypoints.map { URLQueryItem(name: "waypoint", value: Self.commaFormat($0)) })
+        components.queryItems = queryItems
+        return components.url
+    }
+
+    private static func commaFormat(_ coordinate: CLLocationCoordinate2D) -> String {
+        "\(coordinate.latitude),\(coordinate.longitude)"
     }
 }
