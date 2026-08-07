@@ -130,6 +130,11 @@ final class ConversionViewModel: ObservableObject {
         gpxExportURL = nil
     }
 
+    func removeRecentSearch(_ search: RecentSearch) {
+        recentSearchStore.remove(id: search.id)
+        recentSearches = recentSearchStore.loadAll()
+    }
+
     private func recordRecentSearch(label: String, location: ParsedLocation, app: MapApp) {
         let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
         let search = RecentSearch(

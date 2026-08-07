@@ -12,4 +12,8 @@ final class MockRecentSearchStore: RecentSearchStoring {
         searches.removeAll { $0.label == search.label }
         searches.insert(search, at: 0)
     }
+
+    func remove(id: UUID) {
+        searches.removeAll { $0.id == id }
+    }
 }

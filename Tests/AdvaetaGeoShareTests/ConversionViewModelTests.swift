@@ -277,6 +277,23 @@ final class ConversionViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.recentSearches.isEmpty)
     }
 
+    func testRemoveRecentSearchDeletesItFromTheStoreAndTheList() async {
+        let recentSearchStore = MockRecentSearchStore()
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
+            launcher: MockLauncher(result: .opened),
+            recentSearchStore: recentSearchStore
+        )
+        viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+        await viewModel.convert(in: .osmAnd)
+        let search = viewModel.recentSearches[0]
+
+        viewModel.removeRecentSearch(search)
+
+        XCTAssertTrue(viewModel.recentSearches.isEmpty)
+        XCTAssertTrue(recentSearchStore.loadAll().isEmpty)
+    }
+
     func testOpenRecentSearchOpensTheStoredLocationWithItsOwnApp() async {
         let recentSearchStore = MockRecentSearchStore()
         let search = RecentSearch(

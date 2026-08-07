@@ -34,6 +34,7 @@ struct RecentSearch: Identifiable, Codable, Equatable {
 protocol RecentSearchStoring {
     func loadAll() -> [RecentSearch]
     func record(_ search: RecentSearch)
+    func remove(id: UUID)
 }
 
 final class JSONRecentSearchStore: RecentSearchStoring {
@@ -62,6 +63,13 @@ final class JSONRecentSearchStore: RecentSearchStoring {
         if all.count > maxCount {
             all = Array(all.prefix(maxCount))
         }
+        guard let data = try? JSONEncoder().encode(all) else { return }
+        try? data.write(to: fileURL, options: .atomic)
+    }
+
+    func remove(id: UUID) {
+        var all = loadAll()
+        all.removeAll { $0.id == id }
         guard let data = try? JSONEncoder().encode(all) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }

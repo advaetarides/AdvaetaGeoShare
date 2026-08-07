@@ -5,6 +5,7 @@ struct ContentView: View {
     @StateObject private var viewModel: ConversionViewModel
     @StateObject private var autocompleter = AddressAutocompleter()
     @FocusState private var fieldIsFocused: Bool
+    @State private var copiedSearchID: UUID?
     private let routeStore: RouteStoring
     private let launcher: MapAppOpening
 
@@ -185,8 +186,30 @@ struct ContentView: View {
 
                                             Button {
                                                 UIPasteboard.general.string = search.label
+                                                copiedSearchID = search.id
+                                                Task {
+                                                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                                                    if copiedSearchID == search.id {
+                                                        copiedSearchID = nil
+                                                    }
+                                                }
                                             } label: {
-                                                Image(systemName: "doc.on.doc")
+                                                if copiedSearchID == search.id {
+                                                    Text("Copied")
+                                                        .font(.caption(11))
+                                                        .foregroundStyle(Color.tealLight)
+                                                } else {
+                                                    Image(systemName: "doc.on.doc")
+                                                        .font(.system(size: 12))
+                                                        .foregroundStyle(Color.textMuted)
+                                                }
+                                            }
+                                            .buttonStyle(.plain)
+
+                                            Button {
+                                                viewModel.removeRecentSearch(search)
+                                            } label: {
+                                                Image(systemName: "xmark.circle")
                                                     .font(.system(size: 12))
                                                     .foregroundStyle(Color.textMuted)
                                             }
