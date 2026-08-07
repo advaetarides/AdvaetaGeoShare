@@ -4,7 +4,7 @@ Context for the next agent (or human) picking up this repo. Read this before mak
 
 ## What this app does
 
-Paste a Google Maps link (or type a plain address/postcode) → resolve to coordinates → open in OsmAnd, Google Maps, or Waze (user's choice, per-tap or per-saved-item). Also: save places/routes for later, recent-search history, address autocomplete, export/import backup. See `README.md` for the user-facing feature list — this file is about internals and history, not features.
+Paste a Google Maps link (or type a plain address/postcode) → resolve to coordinates → open in OsmAnd, Google Maps, or Waze (user's choice, per-tap or per-saved-item). Also: save places/routes for later, recent-search history, address autocomplete, export/import backup, GPX export. See `README.md` for the user-facing feature list — this file is about internals and history, not features.
 
 ## Architecture
 
@@ -20,7 +20,9 @@ Small, protocol-based DI throughout — every external dependency (parsing, geoc
 | `SavedRoute.swift` | `SavedRoute`/`StoredLocation`/`StoredCoordinate` — the Codable persistence model, distinct from the in-memory `ParsedLocation` (which holds `CLLocationCoordinate2D`, not Codable). `SavedRoute.preferredApp` is chosen once at save time. |
 | `RouteStore.swift` | JSON-file-backed CRUD + `importRoutes` (merge-by-id) for saved places/routes. |
 | `RecentSearchStore.swift` | Same pattern, capped ring buffer (default 5) of successfully-opened searches. `RecentSearch.app` records which provider it was opened with, so reopening a recent uses the same app rather than a fixed default. |
-| `ConversionViewModel.swift` | Orchestrates parse → geocode-fallback → launch, plus save/recent-search recording. |
+| `ConversionViewModel.swift` | Orchestrates parse → geocode-fallback → launch, plus save/recent-search recording and GPX export. |
+| `GPXExporter.swift` | Pure, stateless: builds a GPX 1.1 XML string from a `ParsedLocation` and writes it to a temp file for the share sheet. No dependencies on the rest of the app — safe to reuse elsewhere if GPX export is ever needed from another flow. |
+| `ActivityView.swift` | `UIViewControllerRepresentable` wrapper around `UIActivityViewController`, used for the GPX share sheet. Chosen over `ShareLink` here specifically so the sheet appears on the *first* tap — the file has to be written before the share UI can be shown, and `ShareLink`'s item has to be known up front, whereas `ActivityView` lets `ConversionViewModel` resolve+write the file first and drive presentation via a `.sheet(isPresented:)` bound to `gpxExportURL != nil`. `MenuView.swift`'s export/import still uses `ShareLink` because that item (the JSON backup) is cheap to compute synchronously — don't unify the two without a reason. |
 | `RoutesListViewModel.swift` | Filters the same `RouteStore` into either points-only or routes-only for the two list screens. |
 | `ContentView.swift` / `SaveRouteSheet.swift` / `RoutesListView.swift` / `MenuView.swift` | Views. `Theme.swift` holds the AdvaetaRides brand colors/fonts/button styles — reuse it, don't hardcode colors. |
 

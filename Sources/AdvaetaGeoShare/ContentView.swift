@@ -130,6 +130,17 @@ struct ContentView: View {
                             .opacity(isInputEmpty || viewModel.state == .resolving ? 0.4 : 1)
                         }
 
+                        Button {
+                            Task {
+                                await viewModel.exportGPXTapped()
+                            }
+                        } label: {
+                            Label("Export GPX", systemImage: "square.and.arrow.up")
+                        }
+                        .buttonStyle(GoldOutlineButtonStyle(tint: .darkBrown, textColor: .textMuted))
+                        .disabled(isInputEmpty || viewModel.state == .resolving)
+                        .opacity(isInputEmpty || viewModel.state == .resolving ? 0.4 : 1)
+
                         switch viewModel.state {
                         case .idle, .promptingForRouteName:
                             EmptyView()
@@ -240,6 +251,16 @@ struct ContentView: View {
                         viewModel.cancelSave()
                     }
                 )
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { viewModel.gpxExportURL != nil },
+                    set: { isPresented in if !isPresented { viewModel.clearGPXExport() } }
+                )
+            ) {
+                if let url = viewModel.gpxExportURL {
+                    ActivityView(activityItems: [url])
+                }
             }
         }
         .preferredColorScheme(.dark)

@@ -297,4 +297,46 @@ final class ConversionViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.state, .idle)
     }
+
+    func testExportGPXTappedWritesAFileAndReturnsToIdle() async {
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
+            launcher: MockLauncher(result: .opened)
+        )
+        viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+
+        await viewModel.exportGPXTapped()
+
+        XCTAssertEqual(viewModel.state, .idle)
+        XCTAssertNotNil(viewModel.gpxExportURL)
+        XCTAssertEqual(viewModel.gpxExportURL?.pathExtension, "gpx")
+    }
+
+    func testExportGPXTappedShowsErrorOnParseFailure() async {
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .failure(.notAMapsLink)),
+            geocoder: MockGeocoder(result: .failure(.notFound)),
+            launcher: MockLauncher(result: .opened)
+        )
+        viewModel.inputText = "gibberish"
+
+        await viewModel.exportGPXTapped()
+
+        XCTAssertEqual(viewModel.state, .error("Couldn't find that as a map link or an address."))
+        XCTAssertNil(viewModel.gpxExportURL)
+    }
+
+    func testClearGPXExportResetsTheURL() async {
+        let viewModel = makeViewModel(
+            parser: MockParser(result: .success(.point(CLLocationCoordinate2D(latitude: 1, longitude: 2)))),
+            launcher: MockLauncher(result: .opened)
+        )
+        viewModel.inputText = "https://www.google.com/maps/@1,2,15z"
+        await viewModel.exportGPXTapped()
+        XCTAssertNotNil(viewModel.gpxExportURL)
+
+        viewModel.clearGPXExport()
+
+        XCTAssertNil(viewModel.gpxExportURL)
+    }
 }

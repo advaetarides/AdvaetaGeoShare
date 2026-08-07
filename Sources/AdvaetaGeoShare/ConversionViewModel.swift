@@ -11,6 +11,7 @@ final class ConversionViewModel: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published var inputText: String = ""
     @Published private(set) var recentSearches: [RecentSearch]
+    @Published private(set) var gpxExportURL: URL?
 
     private let parser: LinkParsing
     private let geocoder: AddressGeocoding
@@ -108,6 +109,25 @@ final class ConversionViewModel: ObservableObject {
     func cancelSave() {
         pendingSaveLocation = nil
         state = .idle
+    }
+
+    func exportGPXTapped() async {
+        state = .resolving
+        switch await resolveLocation() {
+        case .success(let location):
+            let trimmedName = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+            gpxExportURL = GPXExporter.writeTemporaryFile(
+                for: location,
+                name: trimmedName.isEmpty ? "AdvaetaGeoShare Route" : trimmedName
+            )
+            state = .idle
+        case .failure(let failure):
+            state = .error(failure.message)
+        }
+    }
+
+    func clearGPXExport() {
+        gpxExportURL = nil
     }
 
     private func recordRecentSearch(label: String, location: ParsedLocation, app: MapApp) {

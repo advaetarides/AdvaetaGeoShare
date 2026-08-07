@@ -6,6 +6,8 @@ Inspired by [GeoShare for Android](https://github.com/jakubvalenta/geoshare), wh
 
 Paste a link, tap a button, you're there.
 
+<img src="docs/screenshots/home.png" alt="AdvaetaGeoShare home screen" width="320">
+
 ## Features
 
 - **Paste a Google Maps link** — plain links (`@lat,lng`, `q=lat,lng`), precise place pins (`!3d..!4d..`), and short links (`maps.app.goo.gl`, `goo.gl/maps`, `g.co/kgs`), resolved by following redirects.
@@ -19,6 +21,7 @@ Paste a link, tap a button, you're there.
 - **My Places / My Routes** — separate lists (single locations vs multi-stop routes) under the menu button, each with swipe-to-delete.
 - **Recent searches** — the last 5 locations you actually opened appear on the main screen for one-tap reopening (only recorded on a confirmed successful open, not every attempt), each with a copy-to-clipboard button.
 - **Export / Import backup** — from the menu, export all saved places/routes to a JSON file (via the share sheet — save to Files, AirDrop, email, etc.) and import one back in later. iOS deletes an app's local data on uninstall with no built-in way to preserve it, so this is the (free) way to carry your saved places across a reinstall or a new device; re-importing the same backup is safe/idempotent.
+- **Export as GPX** — turn the current input (a pasted link or typed address) into a standard `.gpx` file via the share sheet, for loading into GPS devices or other navigation/mapping apps. A single point becomes a `<wpt>`; a multi-stop route becomes an ordered `<rte>` of `<rtept>`s.
 - **Paste / Clear buttons** next to the input field.
 
 ## Setup
@@ -51,7 +54,7 @@ xcodebuild test -project AdvaetaGeoShare.xcodeproj -scheme AdvaetaGeoShare -dest
 
 1. Copy a Google Maps link (or its share text), or just have an address/postcode ready.
 2. Open AdvaetaGeoShare and paste or type it into the text field (the Paste button reads your clipboard directly; address autocomplete suggests matches as you type).
-3. Tap **Open In** to pick OsmAnd, Google Maps, or Waze and go there now, or **Save** to name it, pick its app, and keep it in **My Places**/**My Routes** for later.
+3. Tap **Open In** to pick OsmAnd, Google Maps, or Waze and go there now, **Save** to name it, pick its app, and keep it in **My Places**/**My Routes** for later, or **Export GPX** to get it as a `.gpx` file via the share sheet.
 4. Tap the menu button (top right) for **My Places**, **My Routes**, and backup export/import.
 
 If the chosen app isn't installed, the app tells you so rather than failing silently.
@@ -64,3 +67,9 @@ If the chosen app isn't installed, the app tells you so rather than failing sile
 ## Design
 
 Visual identity matches [advaetarides.github.io](https://advaetarides.github.io) — the bronze medallion logo, Cinzel/Cormorant Garamond typography, and the site's bronze/teal/black palette. Font files are static-weight instances extracted from Google Fonts' variable font sources (OFL-licensed), since the fonts aren't bundled anywhere in the source project itself.
+
+## FAQ
+
+**Why isn't this on the App Store?**
+
+Publishing to the App Store requires enrolling in the Apple Developer Program, which costs $99/year. This is a free, source-available project — building it yourself via the steps above is free and takes a few minutes.
